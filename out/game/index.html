@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crimson Wyrm: Neon Spiral</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #05010f; font-family: "Segoe UI", system-ui, sans-serif; color: #eaf6ff; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+  .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; gap: 10px; align-items: center; padding: 10px 14px; pointer-events: none; z-index: 5; }
+  .pill { background: rgba(10, 8, 40, .72); border: 1px solid #22d3ee; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 700; letter-spacing: .04em; box-shadow: 0 0 12px rgba(34, 211, 238, .45); white-space: nowrap; }
+  .pill b { color: #fde047; }
+  .pill.crimson { border-color: #fb7185; box-shadow: 0 0 12px rgba(251, 113, 133, .5); }
+  #progressWrap { flex: 1; height: 14px; background: rgba(255,255,255,.12); border: 1px solid #22d3ee; border-radius: 999px; overflow: hidden; }
+  #progressBar { height: 100%; width: 0%; background: linear-gradient(90deg, #22d3ee, #a78bfa, #fb7185); transition: width .2s; }
+  .hud .spacer { flex: 0 0 8px; }
+  #nextOrb { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px currentColor; }
+  #fpsMeter { position: absolute; left: 14px; bottom: 12px; z-index: 5; font-size: 13px; font-weight: 700; color: #67e8f9; background: rgba(10,8,40,.7); border: 1px solid #22d3ee; border-radius: 8px; padding: 4px 8px; }
+  #hint { position: absolute; right: 14px; bottom: 12px; z-index: 5; font-size: 12px; color: #c4b5fd; background: rgba(10,8,40,.6); border-radius: 8px; padding: 4px 8px; }
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; background: radial-gradient(ellipse at center, rgba(88,28,135,.55), rgba(3,0,12,.88) 70%); z-index: 10; padding: 20px; }
+  .screen.hidden { display: none; }
+  h1.title { font-size: 56px; line-height: 1.02; letter-spacing: .02em; color: #fff; text-shadow: 0 0 18px #f43f5e, 0 0 46px #a855f7, 0 0 80px #22d3ee; }
+  h1.title span { color: #fde047; }
+  .tagline { font-size: 18px; color: #a5f3fc; max-width: 640px; }
+  .btn { pointer-events: auto; cursor: pointer; font-size: 18px; font-weight: 800; letter-spacing: .05em; color: #0b0214; background: linear-gradient(90deg, #22d3ee, #f472b6); border: none; border-radius: 999px; padding: 13px 34px; box-shadow: 0 0 22px rgba(34,211,238,.7); }
+  .btn:hover { filter: brightness(1.15); }
+  .btn.ghost { background: transparent; color: #a5f3fc; border: 1px solid #22d3ee; box-shadow: none; font-size: 15px; padding: 9px 22px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .stats { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; font-size: 16px; }
+  .stats div { background: rgba(10,8,40,.75); border: 1px solid #7c3aed; border-radius: 12px; padding: 10px 16px; }
+  .stats b { color: #fde047; font-size: 20px; display: block; }
+  .howto { max-width: 620px; text-align: left; font-size: 15px; line-height: 1.55; color: #e0e7ff; background: rgba(10,8,40,.75); border: 1px solid #22d3ee; border-radius: 14px; padding: 16px 20px; }
+  .howto li { margin: 4px 0 4px 18px; }
+  .shopGrid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .shopItem { width: 180px; background: rgba(10,8,40,.8); border: 1px solid #f472b6; border-radius: 14px; padding: 12px; font-size: 14px; }
+  .shopItem b { color: #fde047; }
+  .shopItem button { margin-top: 8px; }
+  #toast { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 6; font-size: 22px; font-weight: 900; color: #fde047; text-shadow: 0 0 14px #f43f5e; pointer-events: none; opacity: 0; transition: opacity .2s; }
+  #comboPop { position: absolute; top: 38%; left: 50%; transform: translate(-50%,-50%); z-index: 6; font-size: 44px; font-weight: 900; color: #fff; text-shadow: 0 0 20px #f43f5e, 0 0 40px #a855f7; pointer-events: none; opacity: 0; }
+  @media (max-width: 760px) { h1.title { font-size: 34px; } .pill { font-size: 11px; padding: 4px 8px; } }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div class="hud" id="hud">
+  <div class="pill crimson">WYRM <b id="hudScore">0</b></div>
+  <div class="pill">LV <b id="hudLevel">1</b> <span id="hudZone">Ember Ring</span></div>
+  <div class="pill">COMBO <b id="hudCombo">x1</b></div>
+  <div id="progressWrap" title="Chain progress to the portal"><div id="progressBar"></div></div>
+  <div class="pill">NEXT <span id="nextOrb"></span></div>
+  <div class="pill">COINS <b id="hudCoins">0</b></div>
+  <div class="pill">LIVES <b id="hudLives">3</b></div>
+  <div class="pill">BEST <b id="hudBest">0</b></div>
+</div>
+<div id="toast"></div>
+<div id="comboPop"></div>
+<div id="fpsMeter">60 FPS</div>
+<div id="hint">Mouse aim &amp; click to shoot &middot; Space swap orb &middot; P pause &middot; M mute &middot; F FPS &middot; 1-6 power-ups</div>
+
+<div class="screen" id="screen-title">
+  <h1 class="title">CRIMSON WYRM<br><span>NEON SPIRAL</span></h1>
+  <p class="tagline">A crimson dragon guards the Neon Spiral. Match three or more glowing orbs to shatter the chain before it slides into the portal.</p>
+  <div class="stats"><div>12 LEVELS<b>3 neon zones</b></div><div>10 ORB COLOURS<b>realistic swirl orbs</b></div><div>6 POWER-UPS<b>bomb &middot; lightning &middot; laser</b></div><div>BOSS CHAINS<b>armored &amp; locked orbs</b></div></div>
+  <div class="row"><button class="btn" id="btnStart">▶ START GAME</button><button class="btn ghost" id="btnHow">HOW TO PLAY</button><button class="btn ghost" id="btnShop">SHOP</button><button class="btn ghost" id="btnEndless">ENDLESS MODE</button></div>
+  <p class="tagline" id="titleBest">Best score: 0 &middot; Campaign progress saved on this device.</p>
+</div>
+
+<div class="screen hidden" id="screen-how">
+  <h1 class="title" style="font-size:36px">HOW TO PLAY</h1>
+  <ul class="howto">
+    <li><b>Aim</b> with the mouse — the wyrm's head follows your cursor. <b>Click</b> to launch an orb.</li>
+    <li>Match <b>3 or more orbs of the same colour</b> to shatter them. Chains of 4+ build your combo multiplier.</li>
+    <li>Clear the whole chain before its head reaches the <b>portal</b> at the spiral's heart, or you lose a life.</li>
+    <li><b>Space</b> swaps your loaded orb. <b>1–6</b> fire a stored power-up. <b>P</b> pauses, <b>M</b> mutes, <b>F</b> toggles the FPS meter.</li>
+    <li>Power orbs: <b>Bomb</b> blasts a radius, <b>Lightning</b> zaps eight orbs, <b>Slow</b> freezes the chain, <b>Rainbow</b> matches any colour, <b>Laser</b> cuts a line, <b>Reverse</b> pushes the chain back.</li>
+    <li>Boss levels (4, 8, 12) bring <b>armored orbs</b> (hit twice) and <b>locked orbs</b> (clear neighbours first). Earn coins, spend them in the shop between levels.</li>
+    <li>Finish all 12 levels to win the campaign, then keep going in Endless mode.</li>
+  </ul>
+  <div class="row"><button class="btn" id="btnHowBack">GOT IT — PLAY</button></div>
+</div>
+
+<div class="screen hidden" id="screen-pause">
+  <h1 class="title" style="font-size:40px">PAUSED</h1>
+  <p class="tagline">The spiral waits. The wyrm does not blink.</p>
+  <div class="row"><button class="btn" id="btnResume">RESUME</button><button class="btn ghost" id="btnRestartPause">RESTART LEVEL</button><button class="btn ghost" id="btnQuitPause">QUIT TO TITLE</button></div>
+</div>
+
+<div class="screen hidden" id="screen-clear">
+  <h1 class="title" style="font-size:40px">LEVEL CLEAR!</h1>
+  <div class="stats" id="clearStats"></div>
+  <div class="row"><button class="btn" id="btnNext">NEXT LEVEL ▶</button><button class="btn ghost" id="btnShop2">SHOP</button></div>
+</div>
+
+<div class="screen hidden" id="screen-over">
+  <h1 class="title" style="font-size:40px" id="overTitle">GAME OVER</h1>
+  <p class="tagline" id="overText"></p>
+  <div class="stats" id="overStats"></div>
+  <div class="row"><button class="btn" id="btnAgain">↻ PLAY AGAIN</button><button class="btn ghost" id="btnTitle2">TITLE SCREEN</button></div>
+</div>
+
+<div class="screen hidden" id="screen-shop">
+  <h1 class="title" style="font-size:36px">NEON SHOP</h1>
+  <p class="tagline">Coins: <b id="shopCoins" style="color:#fde047">0</b> &middot; Items apply to your next run.</p>
+  <div class="shopGrid" id="shopGrid"></div>
+  <div class="row"><button class="btn" id="btnShopBack">BACK</button></div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
