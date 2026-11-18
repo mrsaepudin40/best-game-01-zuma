@@ -15,7 +15,7 @@ import { ParticlePool } from './ParticlePool.js';
 import { NeonHud } from './NeonHud.js';
 import { AudioSynth } from './AudioSynth.js';
 import { loadSave, storeSave } from './SaveData.js';
-import { ORB_COLORS, makeOrbTexture, makeGlowTexture, makeTrackTexture } from './TextureForge.js';
+import { ORB_COLORS, makeOrbTexture, makeGlowTexture, makeTrackTexture, makeArenaTexture } from './TextureForge.js';
 
 const SHOP_ITEMS = [
   { id: 'life', name: 'Extra Life', desc: 'Start each level with +1 life.', cost: 150 },
@@ -78,21 +78,27 @@ export class Game {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.25;
     app.appendChild(this.renderer.domElement);
 
+    // Colourful arena: bright zone sky/fog from the start (level 1 zone),
+    // never the old near-black void.
+    const bootZone = levelConfig(1).zone;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a0218);
+    this.scene.background = new THREE.Color(bootZone.sky);
     // Fog starts beyond the overhead camera's distance to the field (~36),
     // so the top-down view stays crisp and the spiral never washes out.
-    this.scene.fog = new THREE.Fog(0x1a0533, 45, 110);
+    this.scene.fog = new THREE.Fog(bootZone.fog, 45, 110);
     this.camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
     // TOP-DOWN camera: straight overhead (a hair of z-offset only so the
     // lookAt up-vector never degenerates), the whole spiral in frame.
     this.camera.position.set(0, 36, 0.6);
     this.camera.lookAt(0, 0, 0);
 
-    const amb = new THREE.AmbientLight(0x8866ff, 0.55); this.scene.add(amb);
+    // Bright, warm ambient + soft coloured hemisphere fill so the colourful
+    // floor reads as lively, not murky, from the overhead camera.
+    const amb = new THREE.AmbientLight(0xfff1d6, 0.85); this.scene.add(amb);
+    this.hemi = new THREE.HemisphereLight(0xffffff, 0x7c3aed, 0.5); this.scene.add(this.hemi);
     const key = new THREE.DirectionalLight(0xffe0b3, 1.6);
     key.position.set(8, 24, 4); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
@@ -102,14 +108,18 @@ export class Game {
     const rim = new THREE.PointLight(0x22d3ee, 40, 40, 1.8); rim.position.set(-14, 6, -8); this.scene.add(rim);
     const warm = new THREE.PointLight(0xf43f5e, 30, 30, 1.8); warm.position.set(10, 4, 14); this.scene.add(warm);
 
-    // Ground disc + flat neon arena rings (read as the arena boundary
-    // from the overhead camera).
-    const ground = new THREE.Mesh(
+    // Colourful textured ground disc + flat neon arena rings (read as the
+    // arena boundary from the overhead camera). One painted texture per
+    // zone, cached and swapped on level start.
+    this.arenaTex = {};
+    const bootTex = makeArenaTexture(bootZone);
+    this.arenaTex[bootZone.name] = bootTex;
+    this.ground = new THREE.Mesh(
       new THREE.CircleGeometry(34, 48),
-      new THREE.MeshStandardMaterial({ color: 0x120a28, roughness: 0.9, metalness: 0.1 }),
+      new THREE.MeshStandardMaterial({ map: bootTex.map, bumpMap: bootTex.bump, bumpScale: 0.5, color: 0xffffff, roughness: 0.85, metalness: 0.05 }),
     );
-    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
-    this.scene.add(ground);
+    this.ground.rotation.x = -Math.PI / 2; this.ground.receiveShadow = true;
+    this.scene.add(this.ground);
     const ringMat = new THREE.MeshStandardMaterial({ color: 0x0e7490, emissive: 0x22d3ee, emissiveIntensity: 1.4, roughness: 0.4 });
     for (const r of [18.5, 20.5]) {
       const arenaRing = new THREE.Mesh(new THREE.TorusGeometry(r, 0.14, 8, 80), ringMat);
@@ -243,8 +253,7 @@ export class Game {
     if (this.save.owned.includes('life')) this.lives = Math.min(5, this.lives + 1);
     this.currentColor = Math.floor(this.rng() * this.cfg.colours);
     this.nextColor = Math.floor(this.rng() * this.cfg.colours);
-    this.scene.background = new THREE.Color(this.cfg.zone.sky);
-    this.scene.fog.color = new THREE.Color(this.cfg.zone.fog);
+    this.applyZoneBackground();
     if (!demo) {
       this.screen = 'playing';
       this.showScreen(null);
@@ -252,6 +261,20 @@ export class Game {
       this.audio.ensure();
     }
     this.updateHud();
+  }
+
+  // Swap the arena floor texture + sky/fog for the level's zone. Textures
+  // are cached per zone — painted once, reused on every revisit.
+  applyZoneBackground() {
+    const zone = this.cfg.zone;
+    this.scene.background = new THREE.Color(zone.sky);
+    this.scene.fog.color = new THREE.Color(zone.fog);
+    if (!this.arenaTex[zone.name]) this.arenaTex[zone.name] = makeArenaTexture(zone);
+    const tex = this.arenaTex[zone.name];
+    const mat = this.ground.material;
+    if (mat.map !== tex.map) {
+      mat.map = tex.map; mat.bumpMap = tex.bump; mat.needsUpdate = true;
+    }
   }
 
   startGame(endless = false) {

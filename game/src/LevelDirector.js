@@ -2,9 +2,11 @@
 // the chain speed, how many colours are in play, how many orbs must be
 // cleared, and whether it is a boss level (armored + locked orbs, surges).
 export const ZONES = [
-  { name: 'Ember Ring', sky: 0x1a0533, fog: 0x2a0a4a, ground: 0x1e1030 },
-  { name: 'Volt Reef', sky: 0x02182b, fog: 0x0a2a4a, ground: 0x0a1a2e },
-  { name: 'Void Crown', sky: 0x160a2e, fog: 0x2e0a3a, ground: 0x1a0a24 },
+  // Bright, colourful palettes: floor is [light, deep, accent] for the
+  // painted arena texture; sky/fog are rich mid-tones, never near-black.
+  { name: 'Ember Ring', sky: 0xa16207, fog: 0xd97706, ground: 0x7c2d12, floor: ['#fbbf24', '#ea580c', '#facc15'] },
+  { name: 'Volt Reef', sky: 0x0e7490, fog: 0x06b6d4, ground: 0x0f766e, floor: ['#2dd4bf', '#0d9488', '#22d3ee'] },
+  { name: 'Void Crown', sky: 0x7e22ce, fog: 0xa855f7, ground: 0x581c87, floor: ['#c084fc', '#7c3aed', '#f0abfc'] },
 ];
 
 export function levelConfig(level) {

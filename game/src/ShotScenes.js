@@ -10,7 +10,8 @@ export function applyShotScene(game, shot) {
     game.showScreen('title');
     game.fillDemoChain(30, rnd);
   } else if (shot === 'play') {
-    game.startLevel(2, true);
+    // Level 6 = Volt Reef (teal zone), so the four shots show all three zones.
+    game.startLevel(6, true);
     game.fillDemoChain(56, rnd);
     game.score = 2450; game.coins = 120;
     game.screen = 'playing'; game.showScreen(null); game.updateHud();
