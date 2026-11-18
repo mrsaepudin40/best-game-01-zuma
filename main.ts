@@ -1,13 +1,14 @@
-// Crimson Wyrm: Neon Spiral — best-game-01 entry program (Node 22, standard
+// Crimson Widow: Neon Spiral — best-game-01 entry program (Node 22, standard
 // library only). The game is this directory's game/ folder: a Three.js
-// marble-shooter — a procedural red scaled dragon guards a neon spiral,
-// matching 3+ glowing orbs across 12 levels, 3 zones, boss chains, 6
-// power-ups, a coin shop, missions and endless mode, with deterministic
-// ?shot= scenes (title / play / boss / victory) listed in shots.json.
-// TOP-DOWN camera fix: the camera looks straight down at the play field,
-// the dragon coils at the spiral's centre and its head tracks the aim, and
-// the HUD is a top bar (LEVEL left, score centre, progress + MENU right)
-// with floating "+30 COMBO x2" score popups at the clear site.
+// marble-shooter — a procedural crimson widow spider crouches at the heart
+// of a neon spiral, matching 3+ glowing orbs across 12 levels, 3 zones,
+// boss chains, 6 power-ups, a coin shop, missions and endless mode, with
+// deterministic ?shot= scenes (title / play / boss / victory) listed in
+// shots.json. Orbs are 2x size (radius 1.16) so they read clearly at a
+// glance. TOP-DOWN camera: the camera looks straight down at the play
+// field, the spider's fangs track the aim, and the HUD is a top bar (LEVEL
+// left, score centre, progress + MENU right) with floating "+30 COMBO x2"
+// score popups at the clear site.
 // It hands the game in: copies game/ and screenshots/ from beside this file
 // into the output directory and writes dossier.json there with the vendored
 // make.fun library. Outside the grader, MAKEFUN_OUTPUT_DIR stands in for

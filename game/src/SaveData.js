@@ -1,7 +1,7 @@
 // SaveData: localStorage persistence — best score, campaign progress,
 // coins and shop purchases. All reads are guarded so a corrupt or missing
 // store never breaks the game.
-const KEY = 'crimson-wyrm-neon-spiral-v1';
+const KEY = 'crimson-widow-neon-spiral-v1';
 
 export function loadSave() {
   const fallback = { best: 0, level: 1, coins: 0, owned: [], endlessBest: 0, muted: false };

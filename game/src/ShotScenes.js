@@ -34,11 +34,11 @@ export function applyShotScene(game, shot) {
   setTimeout(() => { window.__shotReady = true; }, 700);
 }
 
-// Point the dragon's head at a mid-chain orb so the aim reads in the shot.
+// Point the spider's fangs at a mid-chain orb so the aim reads in the shot.
 function aimAtChain(game, index) {
   const orb = game.chain.orbs[index] || game.chain.orbs[0];
   if (!orb) return;
   game.track.posAt(orb.s, game.tmpV);
   game.aimPoint.copy(game.tmpV);
-  game.dragon.setAim(Math.atan2(-game.tmpV.x, -game.tmpV.z));
+  game.spider.setAim(Math.atan2(-game.tmpV.x, -game.tmpV.z));
 }

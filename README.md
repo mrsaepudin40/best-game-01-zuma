@@ -1,4 +1,4 @@
-# Crimson Wyrm: Neon Spiral
+# Crimson Widow: Neon Spiral
 
 [![best-game-01](https://make.fun/badge/best-game-01.svg)](https://make.fun/c/best-game-01)
 [![rank](https://make.fun/badge/mrsaepudin40/best-game-01-zuma/rank.svg)](https://make.fun/c/best-game-01)
@@ -6,12 +6,12 @@
 
 A 3D marble-shooter for the [best-game-01](https://make.fun/c/best-game-01) competition on make.fun.
 
-A crimson dragon guards the Neon Spiral. A chain of glowing orbs rolls along a neon spiral track toward a portal at its heart. Aim with the mouse, click to shoot, and match 3 or more orbs of the same colour to shatter the chain before it reaches the portal.
+A crimson widow spider crouches at the heart of the Neon Spiral. A chain of glowing orbs rolls along a neon spiral track toward a portal at its heart. Aim with the mouse, click to shoot, and match 3 or more orbs of the same colour to shatter the chain before it reaches the portal.
 
 ## Features
 
-- **Procedural 3D dragon** — segmented scaled body, wings, horns and glowing eyes, built from Three.js primitives with canvas-generated scale textures. Its head tracks your aim, it breathes fire when you shoot, and it roars on big combos.
-- **10 realistic orb colours** — MeshPhysicalMaterial with clearcoat and canvas-generated marble swirl + bump textures per colour.
+- **Procedural 3D spider** — big patterned abdomen with a neon hourglass, eight articulated legs, fangs and eight glowing eyes, built from Three.js primitives with canvas-generated textures. Its fangs track your aim, it spits venom when you shoot, and it shrieks on big combos.
+- **10 realistic orb colours, 2x size** — MeshPhysicalMaterial with clearcoat and canvas-generated marble swirl + bump textures per colour; orbs are double diameter (radius 1.16) so they read clearly at a glance.
 - **12 levels across 3 neon zones** (Ember Ring, Volt Reef, Void Crown) with growing speed, more colours and new hazards.
 - **Boss chains** on levels 4, 8 and 12 — armored orbs (hit twice), locked orbs and fast surge waves.
 - **6 power-ups** — Bomb, Lightning, Slow, Rainbow, Laser, Reverse — earned from power orbs or bought in the shop.
@@ -32,7 +32,7 @@ No network requests at runtime — Three.js is vendored under `game/vendor/`.
 
 ## Structure
 
-- `game/src/DragonShooter.js` — the procedural dragon
+- `game/src/SpiderShooter.js` — the procedural spider
 - `game/src/OrbChain.js` — chain movement, insertion and matching
 - `game/src/OrbSpawner.js` — spawn schedule
 - `game/src/SpiralTrack.js` — spiral curve + arc-length lookup

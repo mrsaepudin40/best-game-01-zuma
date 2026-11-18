@@ -4,8 +4,10 @@
 // so gaps open and close naturally after clears and pushes.
 import * as THREE from 'three';
 
-export const ORB_SPACING = 1.18;
-export const ORB_RADIUS = 0.58;
+// Orbs are 2x the original size: radius 1.16 (diameter 2.32), spaced one
+// diameter apart so neighbours touch, exactly as before at half the size.
+export const ORB_SPACING = 2.36;
+export const ORB_RADIUS = 1.16;
 
 export class OrbChain {
   constructor(track) {

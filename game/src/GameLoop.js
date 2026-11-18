@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { SpiralTrack } from './SpiralTrack.js';
 import { OrbChain, ORB_SPACING } from './OrbChain.js';
 import { OrbSpawner } from './OrbSpawner.js';
-import { DragonShooter } from './DragonShooter.js';
+import { SpiderShooter } from './SpiderShooter.js';
 import { ComboSystem } from './ComboSystem.js';
 import { PowerUpSystem, POWER_TYPES, POWER_LABELS, POWER_COSTS } from './PowerUpSystem.js';
 import { levelConfig, TOTAL_LEVELS } from './LevelDirector.js';
@@ -21,7 +21,7 @@ const SHOP_ITEMS = [
   { id: 'life', name: 'Extra Life', desc: 'Start each level with +1 life.', cost: 150 },
   { id: 'slow', name: 'Slow Charm', desc: 'Start each level with a Slow power-up.', cost: 80 },
   { id: 'rainbow', name: 'Rainbow Charm', desc: 'Start each level with a Rainbow power-up.', cost: 100 },
-  { id: 'horns', name: 'Golden Horns', desc: 'The wyrm wears golden horns. Pure style.', cost: 120 },
+  { id: 'fangs', name: 'Golden Fangs', desc: 'The widow wears golden fangs. Pure style.', cost: 120 },
   { id: 'trail', name: 'Neon Trail', desc: 'Your shots leave a glowing trail.', cost: 60 },
   { id: 'bomb', name: 'Bomb Stock', desc: 'Start each level with 2 Bombs.', cost: 90 },
 ];
@@ -135,7 +135,7 @@ export class Game {
     for (let i = 0; i <= 120; i++) curvePts.push(this.track.curvePoint(i / 120));
     const curve = new THREE.CatmullRomCurve3(curvePts);
     const tube = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 240, 0.38, 10, false),
+      new THREE.TubeGeometry(curve, 240, 0.8, 10, false),
       new THREE.MeshStandardMaterial({ map: makeTrackTexture(), emissive: 0x22d3ee, emissiveIntensity: 0.55, roughness: 0.4 }),
     );
     tube.receiveShadow = true;
@@ -143,18 +143,20 @@ export class Game {
 
     // Portal at the spiral heart.
     this.portal = new THREE.Group();
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.28, 12, 40), new THREE.MeshStandardMaterial({ color: 0x7c3aed, emissive: 0xa855f7, emissiveIntensity: 2.2, roughness: 0.3 }));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.4, 12, 40), new THREE.MeshStandardMaterial({ color: 0x7c3aed, emissive: 0xa855f7, emissiveIntensity: 2.2, roughness: 0.3 }));
     ring.rotation.x = Math.PI / 2;
     this.portal.add(ring);
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xc084fc, transparent: true, opacity: 0.85, depthWrite: false }));
-    glow.scale.set(5, 5, 1);
+    glow.scale.set(7, 7, 1);
     this.portal.add(glow);
     this.track.portalPosition(this.tmpV);
     this.portal.position.copy(this.tmpV);
     this.scene.add(this.portal);
 
     // Orb materials: one shared physical material per colour.
-    this.orbGeo = new THREE.SphereGeometry(0.58, 24, 18);
+    // Orbs are 2x the original size (radius 1.16, diameter 2.32) so they
+    // read clearly at a glance; spacing/collision below scale with them.
+    this.orbGeo = new THREE.SphereGeometry(1.16, 24, 18);
     this.orbMats = ORB_COLORS.map((c) => {
       const tex = makeOrbTexture(c.hex);
       return new THREE.MeshPhysicalMaterial({
@@ -166,10 +168,10 @@ export class Game {
     this.armorMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.9, roughness: 0.25 });
     this.lockMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.6, roughness: 0.4, emissive: 0x7c3aed, emissiveIntensity: 0.5 });
 
-    this.dragon = new DragonShooter(this.scene);
+    this.spider = new SpiderShooter(this.scene);
     this.particles = new ParticlePool(this.scene);
 
-    // Loaded-orb preview sphere floating above the dragon's head, at the
+    // Loaded-orb preview sphere floating beyond the spider's fangs, at the
     // centre of the spiral — the current shot, seen from above.
     this.loadedMesh = new THREE.Mesh(this.orbGeo, this.orbMats[0]);
     this.loadedMesh.position.set(0, 4.3, 0);
@@ -296,10 +298,10 @@ export class Game {
       if (hit) {
         this.aimPoint.copy(hit);
         this.aimS = this.track.nearestS(hit);
-        // The dragon is coiled at the origin: yaw is the world angle from
+        // The spider crouches at the origin: yaw is the world angle from
         // the centre to the cursor (head forward is local -Z).
         const dx = hit.x, dz = hit.z;
-        this.dragon.setAim(Math.atan2(-dx, -dz));
+        this.spider.setAim(Math.atan2(-dx, -dz));
       }
     });
     window.addEventListener('mousedown', (e) => {
@@ -352,7 +354,7 @@ export class Game {
   shoot() {
     if (this.projectiles.length >= 3) return;
     this.audio.ensure(); this.audio.shoot();
-    const from = this.dragon.mouthWorld(this.tmpV3.clone());
+    const from = this.spider.mouthWorld(this.tmpV3.clone());
     const target = this.aimPoint.clone();
     const dir = target.sub(from).normalize();
     const mesh = this.takeOrbMesh(this.currentColor);
@@ -360,7 +362,7 @@ export class Game {
     const color = this.powers.rainbowNext ? -1 : this.currentColor;
     if (this.powers.rainbowNext) this.powers.rainbowNext = false;
     this.projectiles.push({ mesh, vel: dir.multiplyScalar(26), color, rawColor: this.currentColor, life: 2.5 });
-    this.dragon.fire();
+    this.spider.fire();
     this.shotsFired++;
     if (this.save.owned.includes('trail')) this.particles.burst(from, 0xff7722, 6, 2, 0.5);
     this.currentColor = this.nextColor;
@@ -394,7 +396,7 @@ export class Game {
     const color = projectile.color === -1 ? target.color : projectile.color;
     const orb = this.makeOrb(color, 0, {});
     // Insert before or after the hit orb by arc-length.
-    const insertAt = projectile.mesh.position.distanceTo(target.mesh.position) < 1.2
+    const insertAt = projectile.mesh.position.distanceTo(target.mesh.position) < 2.4
       ? (this.aimS <= target.s ? hitIndex : hitIndex + 1) : hitIndex + 1;
     const idx = Math.max(0, Math.min(chain.length, insertAt));
     chain.insertAt(idx, orb);
@@ -428,7 +430,7 @@ export class Game {
         this.freeOrbMesh(o.mesh);
       }
       this.audio.pop(this.combo.multiplier);
-      if (this.combo.multiplier >= 4) { this.dragon.roar(); this.audio.roar(); this.hud.showCombo('COMBO x' + this.combo.multiplier + '!'); }
+      if (this.combo.multiplier >= 4) { this.spider.roar(); this.audio.roar(); this.hud.showCombo('COMBO x' + this.combo.multiplier + '!'); }
       if (this.combo.multiplier >= 2) this.hud.showToast('+' + pts + '  COMBO x' + this.combo.multiplier);
       at = Math.max(0, run.lo - 1);
     }
@@ -503,8 +505,8 @@ export class Game {
     const isWin = won && this.level >= TOTAL_LEVELS && !this.endless;
     document.getElementById('overTitle').textContent = isWin ? 'CAMPAIGN COMPLETE!' : (won ? 'LEVEL CLEAR!' : 'GAME OVER');
     document.getElementById('overText').textContent = isWin
-      ? 'The wyrm has cleansed all twelve levels of the Neon Spiral. The portal is sealed — for now.'
-      : won ? 'Level cleared! The spiral spins on.' : 'The chain reached the portal. The wyrm will try again.';
+      ? 'The widow has cleansed all twelve levels of the Neon Spiral. The portal is sealed — for now.'
+      : won ? 'Level cleared! The spiral spins on.' : 'The chain reached the portal. The widow will spin again.';
     document.getElementById('overStats').innerHTML =
       `<div>Score<b>${stats.score}</b></div><div>Orbs cleared<b>${stats.cleared}</b></div><div>Best combo<b>x${stats.bestCombo}</b></div><div>Coins<b>${stats.coins}</b></div><div>Accuracy<b>${this.shotsFired ? Math.round((this.shotsHit / this.shotsFired) * 100) : 0}%</b></div><div>Missions<b>${this.missionsDone.filter(Boolean).length}/6</b></div>`;
     this.showScreen('over');
@@ -587,7 +589,7 @@ export class Game {
       p.mesh.position.addScaledVector(p.vel, dt);
       let hit = -1;
       for (let j = 0; j < this.chain.length; j++) {
-        if (p.mesh.position.distanceToSquared(this.chain.orbs[j].mesh.position) < 1.25) { hit = j; break; }
+        if (p.mesh.position.distanceToSquared(this.chain.orbs[j].mesh.position) < 5.4) { hit = j; break; }
       }
       if (hit >= 0 || p.life <= 0 || p.mesh.position.y < -2) {
         if (hit >= 0) this.resolveShot(p, hit);
@@ -617,16 +619,17 @@ export class Game {
     if (this.acc > STEP) this.acc = 0;
     // Ambient animation always runs (title screen alive behind overlays).
     const t = now / 1000;
-    this.dragon.update(dtReal);
+    this.spider.update(dtReal);
     this.particles.update(dtReal);
     this.portal.rotation.z += dtReal * 0.6;
     this.portal.children[1].material.opacity = 0.65 + Math.sin(t * 2.4) * 0.2;
     this.loadedMesh.position.y = 4.3 + Math.sin(t * 2) * 0.12;
-    // The loaded orb hovers just beyond the snout, following the aim, so
-    // it never covers the dragon's head from above.
-    const aimYaw = this.dragon.head.rotation.y;
-    this.loadedMesh.position.x = -Math.sin(aimYaw) * 2.6;
-    this.loadedMesh.position.z = -Math.cos(aimYaw) * 2.6;
+    // The loaded orb hovers just beyond the fangs, following the aim, so
+    // it never covers the spider's head from above. Offset 4.4 clears the
+    // fang tips (3.1) plus the orb's own radius (1.16).
+    const aimYaw = this.spider.head.rotation.y;
+    this.loadedMesh.position.x = -Math.sin(aimYaw) * 4.4;
+    this.loadedMesh.position.z = -Math.cos(aimYaw) * 4.4;
     this.loadedMesh.rotation.y += dtReal * 1.5;
     if (this.screen === 'title' || this.screen === 'how' || this.screen === 'shop') {
       // Gentle overhead drift on the title screen — never leaves top-down.

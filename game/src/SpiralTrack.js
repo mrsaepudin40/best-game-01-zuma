@@ -14,8 +14,8 @@ export class SpiralTrack {
   }
 
   // Inward spiral: 2.6 turns, radius 16 -> 6.5, flat on y = 0.55.
-  // The inner end stops clear of the dragon coiled at the centre (the
-  // coil plus spread wings reach ~4.7, the portal ring sits at 6.5).
+  // The inner end stops clear of the spider crouched at the centre (the
+  // legs reach ~5.4, the portal ring sits at 6.5).
   curvePoint(t) {
     const turns = 2.6;
     const angle = t * turns * Math.PI * 2 + Math.PI * 0.5;

@@ -1,5 +1,5 @@
 // TextureForge: every texture in the game is painted on canvas at boot —
-// no external images. Scale hide for the wyrm, marble swirls per orb colour,
+// no external images. Patterned hide for the widow spider, marble swirls per orb colour,
 // and a soft radial glow sprite for particles and the portal.
 import * as THREE from 'three';
 
@@ -25,7 +25,7 @@ function canvasTexture(size, painter) {
   return t;
 }
 
-// Overlapping scale arcs, like a dragon's hide.
+// Overlapping scale arcs, like a jewelled hide.
 export function makeScaleTexture() {
   const map = canvasTexture(512, (g, s) => {
     g.fillStyle = '#7f1d1d'; g.fillRect(0, 0, s, s);
@@ -138,7 +138,7 @@ function roundTile(g, x, y, w, h, r) {
 // Colourful textured arena floor for one zone: rich gradient base, mosaic
 // tiles with dark grout, glowing rune rings, circuit traces, speckle stars,
 // a darker annulus under the spiral (orb/track readability) and a bright
-// medallion under the dragon at the heart. zone.floor is [light, deep, accent].
+// medallion under the spider at the heart. zone.floor is [light, deep, accent].
 export function makeArenaTexture(zone) {
   const rnd = mulberry32(0xA11CE5);
   const [c1, c2, accent] = zone.floor;
@@ -202,7 +202,7 @@ export function makeArenaTexture(zone) {
     g.beginPath(); g.arc(cx, cy, px(17.5), 0, Math.PI * 2); g.stroke();
     g.beginPath(); g.arc(cx, cy, px(5.5), 0, Math.PI * 2); g.stroke();
     g.globalAlpha = 1;
-    // Bright medallion under the dragon at the heart.
+    // Bright medallion under the spider at the heart.
     const med = g.createRadialGradient(cx, cy, 4, cx, cy, px(5.5));
     med.addColorStop(0, 'rgba(255,255,255,0.30)');
     med.addColorStop(0.7, accent);

@@ -1,4 +1,4 @@
-// Crimson Wyrm: Neon Spiral — entry point. Boots the game and, when the
+// Crimson Widow: Neon Spiral — entry point. Boots the game and, when the
 // page carries ?shot=<scene>, renders that deterministic scene for the
 // screenshot pass instead of waiting for a player.
 import { Game } from './GameLoop.js';
