@@ -17,6 +17,7 @@ export class NeonHud {
       next: document.getElementById('nextOrb'),
       toast: document.getElementById('toast'),
       pop: document.getElementById('comboPop'),
+      floatLayer: document.getElementById('floatLayer'),
       fps: document.getElementById('fpsMeter'),
       titleBest: document.getElementById('titleBest'),
     };
@@ -49,6 +50,22 @@ export class NeonHud {
     this.el.pop.style.opacity = '1';
     this.el.pop.style.transform = 'translate(-50%,-50%) scale(1.15)';
     setTimeout(() => { this.el.pop.style.opacity = '0'; this.el.pop.style.transform = 'translate(-50%,-50%) scale(1)'; }, 700);
+  }
+
+  // Floating score popup at a screen position (xPct/yPct in percent of
+  // the viewport): rises and fades, like the classic "+30 COMBO x2" pops.
+  showFloat(text, xPct, yPct) {
+    const layer = this.el.floatLayer;
+    if (!layer) return;
+    const div = document.createElement('div');
+    div.className = 'floatPop';
+    div.textContent = text;
+    div.style.left = Math.max(4, Math.min(96, xPct)) + '%';
+    div.style.top = Math.max(10, Math.min(90, yPct)) + '%';
+    layer.appendChild(div);
+    while (layer.children.length > 8) layer.firstChild.remove();
+    requestAnimationFrame(() => div.classList.add('rise'));
+    setTimeout(() => div.remove(), 950);
   }
 
   setFps(n) { this.el.fps.textContent = Math.round(n) + ' FPS'; }

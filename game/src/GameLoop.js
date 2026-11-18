@@ -83,14 +83,18 @@ export class Game {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0a0218);
-    this.scene.fog = new THREE.Fog(0x1a0533, 30, 70);
+    // Fog starts beyond the overhead camera's distance to the field (~36),
+    // so the top-down view stays crisp and the spiral never washes out.
+    this.scene.fog = new THREE.Fog(0x1a0533, 45, 110);
     this.camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
-    this.camera.position.set(12, 8, 29);
-    this.camera.lookAt(0, 0.5, 2);
+    // TOP-DOWN camera: straight overhead (a hair of z-offset only so the
+    // lookAt up-vector never degenerates), the whole spiral in frame.
+    this.camera.position.set(0, 36, 0.6);
+    this.camera.lookAt(0, 0, 0);
 
     const amb = new THREE.AmbientLight(0x8866ff, 0.55); this.scene.add(amb);
     const key = new THREE.DirectionalLight(0xffe0b3, 1.6);
-    key.position.set(12, 20, 8); key.castShadow = true;
+    key.position.set(8, 24, 4); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     key.shadow.camera.left = -20; key.shadow.camera.right = 20;
     key.shadow.camera.top = 20; key.shadow.camera.bottom = -20;
@@ -98,21 +102,21 @@ export class Game {
     const rim = new THREE.PointLight(0x22d3ee, 40, 40, 1.8); rim.position.set(-14, 6, -8); this.scene.add(rim);
     const warm = new THREE.PointLight(0xf43f5e, 30, 30, 1.8); warm.position.set(10, 4, 14); this.scene.add(warm);
 
-    // Ground disc + star field.
+    // Ground disc + flat neon arena rings (read as the arena boundary
+    // from the overhead camera).
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(34, 48),
       new THREE.MeshStandardMaterial({ color: 0x120a28, roughness: 0.9, metalness: 0.1 }),
     );
     ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
     this.scene.add(ground);
-    const starGeo = new THREE.BufferGeometry();
-    const starPos = new Float32Array(400 * 3);
-    for (let i = 0; i < 400; i++) {
-      const a = Math.random() * Math.PI * 2, r = 26 + Math.random() * 30;
-      starPos[i * 3] = Math.cos(a) * r; starPos[i * 3 + 1] = 4 + Math.random() * 26; starPos[i * 3 + 2] = Math.sin(a) * r;
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0x0e7490, emissive: 0x22d3ee, emissiveIntensity: 1.4, roughness: 0.4 });
+    for (const r of [18.5, 20.5]) {
+      const arenaRing = new THREE.Mesh(new THREE.TorusGeometry(r, 0.14, 8, 80), ringMat);
+      arenaRing.rotation.x = Math.PI / 2;
+      arenaRing.position.y = 0.12;
+      this.scene.add(arenaRing);
     }
-    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    this.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xa5f3fc, size: 0.35, sizeAttenuation: true })));
 
     this.track = new SpiralTrack();
     this.chain = new OrbChain(this.track);
@@ -130,7 +134,7 @@ export class Game {
     // Portal at the spiral heart.
     this.portal = new THREE.Group();
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.28, 12, 40), new THREE.MeshStandardMaterial({ color: 0x7c3aed, emissive: 0xa855f7, emissiveIntensity: 2.2, roughness: 0.3 }));
-    ring.rotation.x = Math.PI / 2.4;
+    ring.rotation.x = Math.PI / 2;
     this.portal.add(ring);
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xc084fc, transparent: true, opacity: 0.85, depthWrite: false }));
     glow.scale.set(5, 5, 1);
@@ -155,9 +159,10 @@ export class Game {
     this.dragon = new DragonShooter(this.scene);
     this.particles = new ParticlePool(this.scene);
 
-    // Loaded-orb preview sphere floating above the dragon's head.
+    // Loaded-orb preview sphere floating above the dragon's head, at the
+    // centre of the spiral — the current shot, seen from above.
     this.loadedMesh = new THREE.Mesh(this.orbGeo, this.orbMats[0]);
-    this.loadedMesh.position.set(-6.2, 3.8, 14.8);
+    this.loadedMesh.position.set(0, 4.3, 0);
     this.scene.add(this.loadedMesh);
 
     window.addEventListener('resize', () => {
@@ -268,9 +273,10 @@ export class Game {
       if (hit) {
         this.aimPoint.copy(hit);
         this.aimS = this.track.nearestS(hit);
-        const dx = hit.x - (-7), dz = hit.z - 16;
-        // Head yaw is relative to the dragon's own yaw (-0.42).
-        this.dragon.setAim(Math.atan2(dx, -dz) + 0.42);
+        // The dragon is coiled at the origin: yaw is the world angle from
+        // the centre to the cursor (head forward is local -Z).
+        const dx = hit.x, dz = hit.z;
+        this.dragon.setAim(Math.atan2(-dx, -dz));
       }
     });
     window.addEventListener('mousedown', (e) => {
@@ -289,6 +295,7 @@ export class Game {
       }
     });
     const bind = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener('click', fn); };
+    bind('btnMenu', () => this.togglePause());
     bind('btnStart', () => this.startGame(false));
     bind('btnEndless', () => this.startGame(true));
     bind('btnHow', () => this.showScreen('how'));
@@ -386,6 +393,12 @@ export class Game {
       this.score += pts;
       this.coins += removed.length;
       this.clearedTotal += removed.length;
+      // Floating score popup at the clear site, like the reference frames:
+      // "+30" alone, or "+120  COMBO x4" when the multiplier is running.
+      const clearPos = removed[0].mesh.position;
+      this.tmpV.copy(clearPos).project(this.camera);
+      const popText = this.combo.multiplier >= 2 ? `+${pts}  COMBO x${this.combo.multiplier}` : `+${pts}`;
+      this.hud.showFloat(popText, (this.tmpV.x * 0.5 + 0.5) * 100, (-this.tmpV.y * 0.5 + 0.5) * 100);
       for (const o of removed) {
         this.particles.burst(o.mesh.position, ORB_COLORS[o.color].hex, 16, 6, 2);
         if (o.power) { this.powers.grant(o.powerType); this.hud.showToast('POWER-UP: ' + POWER_LABELS[o.powerType] + '!'); this.audio.power(); }
@@ -585,11 +598,18 @@ export class Game {
     this.particles.update(dtReal);
     this.portal.rotation.z += dtReal * 0.6;
     this.portal.children[1].material.opacity = 0.65 + Math.sin(t * 2.4) * 0.2;
-    this.loadedMesh.position.y = 3.8 + Math.sin(t * 2) * 0.12;
+    this.loadedMesh.position.y = 4.3 + Math.sin(t * 2) * 0.12;
+    // The loaded orb hovers just beyond the snout, following the aim, so
+    // it never covers the dragon's head from above.
+    const aimYaw = this.dragon.head.rotation.y;
+    this.loadedMesh.position.x = -Math.sin(aimYaw) * 2.6;
+    this.loadedMesh.position.z = -Math.cos(aimYaw) * 2.6;
     this.loadedMesh.rotation.y += dtReal * 1.5;
     if (this.screen === 'title' || this.screen === 'how' || this.screen === 'shop') {
-      this.camera.position.x = 12 + Math.sin(t * 0.12) * 2;
-      this.camera.lookAt(0, 1, 2);
+      // Gentle overhead drift on the title screen — never leaves top-down.
+      this.camera.position.x = Math.sin(t * 0.12) * 1.5;
+      this.camera.position.z = 0.6 + Math.cos(t * 0.09) * 0.8;
+      this.camera.lookAt(0, 0, 0);
     }
     this.renderer.render(this.scene, this.camera);
   }

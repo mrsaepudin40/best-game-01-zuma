@@ -4,6 +4,10 @@
 // matching 3+ glowing orbs across 12 levels, 3 zones, boss chains, 6
 // power-ups, a coin shop, missions and endless mode, with deterministic
 // ?shot= scenes (title / play / boss / victory) listed in shots.json.
+// TOP-DOWN camera fix: the camera looks straight down at the play field,
+// the dragon coils at the spiral's centre and its head tracks the aim, and
+// the HUD is a top bar (LEVEL left, score centre, progress + MENU right)
+// with floating "+30 COMBO x2" score popups at the clear site.
 // It hands the game in: copies game/ and screenshots/ from beside this file
 // into the output directory and writes dossier.json there with the vendored
 // make.fun library. Outside the grader, MAKEFUN_OUTPUT_DIR stands in for

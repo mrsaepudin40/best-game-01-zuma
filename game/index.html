@@ -10,13 +10,20 @@
   #app { position: fixed; inset: 0; }
   canvas { display: block; }
   .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; gap: 10px; align-items: center; padding: 10px 14px; pointer-events: none; z-index: 5; }
+  .hudSide { display: flex; gap: 10px; align-items: center; }
+  .hudSide.right { flex: 0 0 340px; }
+  .hudCenter { flex: 1; display: flex; justify-content: center; }
+  .hudSub { position: absolute; top: 58px; left: 14px; display: flex; gap: 8px; z-index: 5; pointer-events: none; }
   .pill { background: rgba(10, 8, 40, .72); border: 1px solid #22d3ee; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 700; letter-spacing: .04em; box-shadow: 0 0 12px rgba(34, 211, 238, .45); white-space: nowrap; }
   .pill b { color: #fde047; }
   .pill.crimson { border-color: #fb7185; box-shadow: 0 0 12px rgba(251, 113, 133, .5); }
+  .pill.score { font-size: 18px; padding: 8px 22px; }
+  .pill.sm { font-size: 12px; padding: 4px 10px; }
+  #btnMenu { pointer-events: auto; font-size: 14px; padding: 8px 18px; }
   #progressWrap { flex: 1; height: 14px; background: rgba(255,255,255,.12); border: 1px solid #22d3ee; border-radius: 999px; overflow: hidden; }
   #progressBar { height: 100%; width: 0%; background: linear-gradient(90deg, #22d3ee, #a78bfa, #fb7185); transition: width .2s; }
   .hud .spacer { flex: 0 0 8px; }
-  #nextOrb { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px currentColor; }
+  #nextOrb { display: inline-block; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px currentColor; vertical-align: -7px; }
   #fpsMeter { position: absolute; left: 14px; bottom: 12px; z-index: 5; font-size: 13px; font-weight: 700; color: #67e8f9; background: rgba(10,8,40,.7); border: 1px solid #22d3ee; border-radius: 8px; padding: 4px 8px; }
   #hint { position: absolute; right: 14px; bottom: 12px; z-index: 5; font-size: 12px; color: #c4b5fd; background: rgba(10,8,40,.6); border-radius: 8px; padding: 4px 8px; }
   .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; background: radial-gradient(ellipse at center, rgba(88,28,135,.55), rgba(3,0,12,.88) 70%); z-index: 10; padding: 20px; }
@@ -38,6 +45,9 @@
   .shopItem b { color: #fde047; }
   .shopItem button { margin-top: 8px; }
   #toast { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 6; font-size: 22px; font-weight: 900; color: #fde047; text-shadow: 0 0 14px #f43f5e; pointer-events: none; opacity: 0; transition: opacity .2s; }
+  #floatLayer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 6; }
+  .floatPop { position: absolute; transform: translate(-50%,-50%); font-size: 26px; font-weight: 900; color: #fde047; text-shadow: 0 0 12px #f43f5e, 0 2px 0 #000; pointer-events: none; opacity: 1; transition: transform .9s ease-out, opacity .9s ease-out; white-space: nowrap; }
+  .floatPop.rise { transform: translate(-50%,-50%) translateY(-52px); opacity: 0; }
   #comboPop { position: absolute; top: 38%; left: 50%; transform: translate(-50%,-50%); z-index: 6; font-size: 44px; font-weight: 900; color: #fff; text-shadow: 0 0 20px #f43f5e, 0 0 40px #a855f7; pointer-events: none; opacity: 0; }
   @media (max-width: 760px) { h1.title { font-size: 34px; } .pill { font-size: 11px; padding: 4px 8px; } }
 </style>
@@ -48,23 +58,25 @@
 <body>
 <div id="app"></div>
 <div class="hud" id="hud">
-  <div class="pill crimson">WYRM <b id="hudScore">0</b></div>
-  <div class="pill">LV <b id="hudLevel">1</b> <span id="hudZone">Ember Ring</span></div>
-  <div class="pill">COMBO <b id="hudCombo">x1</b></div>
-  <div id="progressWrap" title="Chain progress to the portal"><div id="progressBar"></div></div>
-  <div class="pill">NEXT <span id="nextOrb"></span></div>
-  <div class="pill">COINS <b id="hudCoins">0</b></div>
-  <div class="pill">LIVES <b id="hudLives">3</b></div>
-  <div class="pill">BEST <b id="hudBest">0</b></div>
+  <div class="hudSide"><div class="pill">LEVEL <b id="hudLevel">1</b> <span id="hudZone">Ember Ring</span></div><div class="pill">LIVES <b id="hudLives">3</b></div></div>
+  <div class="hudCenter"><div class="pill crimson score">SCORE <b id="hudScore">0</b></div></div>
+  <div class="hudSide right"><div id="progressWrap" title="Chain progress to the portal"><div id="progressBar"></div></div><button class="btn ghost" id="btnMenu">MENU</button></div>
+</div>
+<div class="hudSub">
+  <div class="pill sm">COMBO <b id="hudCombo">x1</b></div>
+  <div class="pill sm">NEXT <span id="nextOrb"></span></div>
+  <div class="pill sm">COINS <b id="hudCoins">0</b></div>
+  <div class="pill sm">BEST <b id="hudBest">0</b></div>
 </div>
 <div id="toast"></div>
+<div id="floatLayer"></div>
 <div id="comboPop"></div>
 <div id="fpsMeter">60 FPS</div>
 <div id="hint">Mouse aim &amp; click to shoot &middot; Space swap orb &middot; P pause &middot; M mute &middot; F FPS &middot; 1-6 power-ups</div>
 
 <div class="screen" id="screen-title">
   <h1 class="title">CRIMSON WYRM<br><span>NEON SPIRAL</span></h1>
-  <p class="tagline">A crimson dragon guards the Neon Spiral. Match three or more glowing orbs to shatter the chain before it slides into the portal.</p>
+  <p class="tagline">Seen from above, a crimson dragon coils at the heart of the Neon Spiral. Match three or more glowing orbs to shatter the chain before it slides into the portal.</p>
   <div class="stats"><div>12 LEVELS<b>3 neon zones</b></div><div>10 ORB COLOURS<b>realistic swirl orbs</b></div><div>6 POWER-UPS<b>bomb &middot; lightning &middot; laser</b></div><div>BOSS CHAINS<b>armored &amp; locked orbs</b></div></div>
   <div class="row"><button class="btn" id="btnStart">▶ START GAME</button><button class="btn ghost" id="btnHow">HOW TO PLAY</button><button class="btn ghost" id="btnShop">SHOP</button><button class="btn ghost" id="btnEndless">ENDLESS MODE</button></div>
   <p class="tagline" id="titleBest">Best score: 0 &middot; Campaign progress saved on this device.</p>
@@ -73,7 +85,7 @@
 <div class="screen hidden" id="screen-how">
   <h1 class="title" style="font-size:36px">HOW TO PLAY</h1>
   <ul class="howto">
-    <li><b>Aim</b> with the mouse — the wyrm's head follows your cursor. <b>Click</b> to launch an orb.</li>
+    <li><b>Aim</b> with the mouse — viewed from above, the wyrm coils at the spiral's centre and its head follows your cursor. <b>Click</b> to launch an orb.</li>
     <li>Match <b>3 or more orbs of the same colour</b> to shatter them. Chains of 4+ build your combo multiplier.</li>
     <li>Clear the whole chain before its head reaches the <b>portal</b> at the spiral's heart, or you lose a life.</li>
     <li><b>Space</b> swaps your loaded orb. <b>1–6</b> fire a stored power-up. <b>P</b> pauses, <b>M</b> mutes, <b>F</b> toggles the FPS meter.</li>

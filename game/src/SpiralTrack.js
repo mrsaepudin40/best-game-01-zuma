@@ -13,11 +13,13 @@ export class SpiralTrack {
     this.buildSamples();
   }
 
-  // Inward spiral: 2.6 turns, radius 15 -> 4.5, flat on y = 0.55.
+  // Inward spiral: 2.6 turns, radius 16 -> 6.5, flat on y = 0.55.
+  // The inner end stops clear of the dragon coiled at the centre (the
+  // coil plus spread wings reach ~4.7, the portal ring sits at 6.5).
   curvePoint(t) {
     const turns = 2.6;
     const angle = t * turns * Math.PI * 2 + Math.PI * 0.5;
-    const radius = 15 - t * 10.5;
+    const radius = 16 - t * 9.5;
     return new THREE.Vector3(Math.cos(angle) * radius, 0.55, Math.sin(angle) * radius);
   }
 
